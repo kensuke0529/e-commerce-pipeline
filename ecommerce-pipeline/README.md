@@ -5,9 +5,7 @@ This dbt project transforms raw e-commerce event data from S3 into analytics-rea
 
 ## Airflow Orchestration
 
-### DAG: `demo_s3_triggered_dbt`
-
-![image](../../../images/image-2.png)
+![image](../images/image-2.png)
 
 ### Task Breakdown
 

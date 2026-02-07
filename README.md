@@ -111,7 +111,7 @@ where event_data:event_timestamp::timestamp_ntz > (
 
 ## dbt Transformation Layers
 
-The dbt project follows a **medallion architecture** with four transformation layers. For detailed model documentation, see [ecommerce-pipeline/include/dbt_snowflake/dbt_flow.md](ecommerce-pipeline/include/dbt_snowflake/dbt_flow.md).
+The dbt project follows a **medallion architecture** with four transformation layers. For detailed model documentation, see [dbt_flow.md](ecommerce-pipeline/README.md).
 
 ### Layer 1: Staging (`models/staging/`)
 

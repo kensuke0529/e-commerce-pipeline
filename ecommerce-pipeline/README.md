@@ -1,45 +1,143 @@
-# Overview
+# dbt DAG Flow Explanation
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+This dbt project transforms raw e-commerce event data from S3 into analytics-ready tables in Snowflake. The pipeline is orchestrated by Apache Airflow and follows a **medallion architecture** pattern with four  layers: **Source → Staging → Intermediate → Marts → Analytics**.
 
-Astronomer is the best place to host Apache Airflow -- try it out with a free trial at [astronomer.io](https://www.astronomer.io/).
 
-# Project Contents
+## Airflow Orchestration
 
-Your Astro project contains the following files and folders:
+### DAG: `demo_s3_triggered_dbt`
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-  - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://docs.astronomer.io/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+![image](../../../images/image-2.png)
 
-# Deploy Your Project Locally
+### Task Breakdown
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+1. **`wait_for_s3_data`** (S3KeySensor)
+   - Monitors S3 bucket for new event files
+   - Bucket: `ecommerce-streaming-data-0001`
+   - Path pattern: `raw-events/YYYY/MM/DD/*`
+   - Checks every hour, waits up to 3 hours
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+2. **`load_raw_data`** (BashOperator)
+   - Runs dbt macro: `copy_into_raw_events`
+   - Executes Snowflake `COPY INTO` command
+   - Loads JSON files from S3 stage into `RAW_EVENTS` table
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+3. **`dbt_deps`** (BashOperator)
+   - Installs dbt packages: `dbt_utils`, `dbt_expectations`, `dbt_date`
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+4. **`dbt_run`** (BashOperator)
+   - Executes all dbt models in dependency order
+   - Uses Snowflake connection pool to limit concurrency
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either stop your existing Docker containers or change the port.
+5. **`dbt_test`** (BashOperator)
+   - Runs data quality tests defined in schema.yml files
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+6. **`logging`** 
 
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
+## dbt Model Layers
 
-# Deploy Your Project to Astronomer
+### 1. **Staging Layer** (`models/staging/`)
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
+#### `stg_events.sql`
+- **Materialization**: Incremental (merge strategy)
+- **Purpose**: Parse raw JSON events into typed columns
+- **Incremental Logic**: 
+  - Processes new events + 3-day lookback for late arrivals
+  - Merge on `event_id` (unique key)
+- **Transformations**:
+  - Flatten nested JSON fields 
+  - Type casting (timestamp, string, float)
 
-# Contact
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+### 2. **Intermediate Layer** (`models/intermediate/`)
+
+These models perform aggregations and transformations.
+
+#### `int_customer_purchase_history.sql`
+- **Materialization**: Ephemeral (not materialized)
+- **Logic**:
+  - Filters for `order_fulfilled` events
+  - Groups by customer
+  - Calculates: `total_orders`, `total_spent`, `last_order_date`
+
+#### `int_session_events.sql`
+- **Materialization**: View
+- **Logic**:
+  - Groups events by `session_id`
+  - Calculates: session duration, event count, conversion flag
+
+#### `int_order_items_flattened.sql`
+- **Materialization**: View
+- **Logic**:
+  - Uses Snowflake's `LATERAL FLATTEN` to unnest JSON array
+  - One row per product in each order
+
+### 3. **Marts Layer** (`models/marts/`)
+
+#### `dim_customers.sql`
+- **Materialization**: Incremental table
+- **Incremental Logic**:
+  - Merge on `customer_id`
+
+#### `fct_orders.sql`
+- **Materialization**: Table
+- **Grain**: One row per order
+
+#### `fct_order_items.sql`
+- **Materialization**: Table
+- **Grain**: One row per product per order
+
+
+
+---
+
+### 4. **Analytics Layer** (`models/analytics/`)
+
+Pre-joined, denormalized tables optimized for BI tools (no joins required).
+
+#### `analytics_orders.sql`
+- **Materialization**: Table
+- **Grain**: One row per order
+
+
+#### `analytics_order_items.sql`
+- **Materialization**: Table
+- **Grain**: One row per product per order
+
+#### `analytics_customer_summary.sql`
+- **Materialization**: Table
+- **Grain**: One row per customer
+
+
+## Data Flow Summary
+
+### Step-by-Step Transformation
+
+1. **Raw Events** → S3 bucket (JSON files)
+2. **COPY INTO** → Snowflake `RAW_EVENTS` table
+3. **Staging** → Parse JSON, type cast, incremental merge
+4. **Intermediate** → Aggregate sessions, flatten items, calculate customer history
+5. **Marts** → Build star schema (dimensions + facts)
+6. **Analytics** → Pre-join for BI tools
+
+
+## Key Features
+
+### 1. **Incremental Processing**
+- `stg_events`: Processes only new events with 3-day lookback for late arrivals
+- `dim_customers`: Refreshes only customers with new orders
+
+### 2. **Data Quality**
+- Schema contracts enforce data types
+- dbt tests validate data integrity
+- Audit macros for custom checks
+
+### 3. **Performance Optimization**
+- Ephemeral models avoid unnecessary materialization
+- Incremental models reduce processing time
+- Pre-joined analytics tables eliminate runtime joins
+
+### 4. **Separation of Concerns**
+- **Marts Layer**: For data engineers (normalized, star schema)
+- **Analytics Layer**: For business users (denormalized, no joins)
+

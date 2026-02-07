@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: analytics_orders
+    description: |
+      **BI-Ready Orders Table**
+      
+      Pre-joined order data with customer and session context. Use this table in BI tools
+      to analyze order patterns without manual joins.
+      
+      **Grain**: One row per order
+      
+      **Common Use Cases**:
+      - Revenue dashboards by customer segment
+      - Acquisition channel performance
+      - First-time vs. repeat customer analysis
+      - Time-based order trends
+    columns:
+      - name: order_id
+        description: Unique order identifier
+        tests:
+          - unique
+          - not_null
+      - name: customer_segment
+        description: Customer tier (VIP, Loyal, New)
+      - name: acquisition_channel
+        description: How the customer found us (organic, paid, referral, etc.)
+      - name: is_first_order
+        description: Boolean flag indicating if this is the customer's first order
+      - name: total_order_value
+        description: Revenue + tax + shipping
+
+  - name: analytics_order_items
+    description: |
+      **BI-Ready Order Items Table**
+      
+      Line-item level data with complete order and customer context. Perfect for product
+      and category analytics.
+      
+      **Grain**: One row per order line item
+      
+      **Common Use Cases**:
+      - Product performance analysis
+      - Category trends
+      - Basket analysis
+      - Customer product affinity
+    columns:
+      - name: product_id
+        description: Unique product identifier
+      - name: category
+        description: Product category
+      - name: line_item_revenue
+        description: Unit price × quantity for this line item
+      - name: pct_of_order_revenue
+        description: Percentage this item contributed to total order revenue
+
+  - name: analytics_customer_summary
+    description: |
+      **BI-Ready Customer Summary Table**
+      
+      One-row-per-customer metrics including lifetime value, RFM scoring, and product affinity.
+      
+      **Grain**: One row per customer
+      
+      **Common Use Cases**:
+      - Customer segmentation dashboards
+      - Cohort analysis
+      - Retention metrics
+      - Customer lifetime value analysis
+    columns:
+      - name: customer_id
+        description: Unique customer identifier
+        tests:
+          - unique
+          - not_null
+      - name: total_spent
+        description: Customer lifetime value (total revenue)
+      - name: avg_order_value
+        description: Average order size for this customer
+      - name: favorite_category
+        description: Product category with highest spend
+      - name: recency_score
+        description: RFM recency score (High/Medium/Low)
+      - name: frequency_score
+        description: RFM frequency score (High/Medium/Low)
+      - name: monetary_score
+        description: RFM monetary score (High/Medium/Low)

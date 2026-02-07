@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: int_customer_purchase_history
+    description: "Intermediate model for customer purchase history"
+    columns:
+      - name: customer_id
+        description: "Unique identifier for each customer"
+        tests:
+          - not_null
+          - unique
+      - name: total_orders
+        description: "Total number of orders made by the customer"
+        tests:
+          - not_null
+      - name: total_spent
+        description: "Total amount spent by the customer"
+        tests:
+          - not_null
+      - name: last_order_date
+        description: "Date of the most recent order made by the customer"
+        tests:
+          - not_null

@@ -1,0 +1,30 @@
+name: "ecommerce_pipeline"
+version: "1.0.0"
+config-version: 2
+
+# This MUST match the top-level name in your /Users/kensukeumakoshi/.dbt/profiles.yml
+profile: "dbt_snowflake"
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  ecommerce_pipeline:
+    # This applies to all models in the models/ folder
+    +materialized: view
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+    analytics:
+      +materialized: table
+      +schema: analytics
+      +tags: ["bi_ready"]

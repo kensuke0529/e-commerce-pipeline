@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: raw_events_from_s3
+
+
+  - name: stg_events
+    config:
+      contract:
+        enforced: true
+
+    columns:
+      - name: event_at
+        data_type: timestamp_ntz
+        tests:
+          - not_null
+          - event_at_is_valid:
+              column_name: event_at
+              description: "{{doc('event_at_is_valid')}}"
+              config:
+                severity: warn
+        constraints: 
+          - type: not_null  
+
+      - name: event_id
+        data_type: string
+        constraints: 
+          - type: not_null
+          - type: unique
+
+      - name: session_id
+        data_type: string
+        constraints: 
+          - type: not_null
+
+      - name: customer_id 
+        data_type: string
+        constraints: 
+          -  type: not_null
+
+      - name: order_id
+        data_type: string
+        constraints: []
+
+      - name: event_type
+        data_type: string
+
+      - name: customer_email
+        data_type: string
+      
+      - name: customer_first_name
+        data_type: string
+
+      - name: customer_last_name
+        data_type: string
+
+      - name: customer_country
+        data_type: string
+
+      - name: order_status
+        data_type: string
+
+      - name: currency
+        data_type: string
+
+      - name: total_amount
+        data_type: float
+
+      - name: tax_amount
+        data_type: float
+
+      - name: shipping_amount
+        data_type: float
+
+      - name: acquisition_channel
+        data_type: string
+
+      - name: device_type
+        data_type: string
+
+      - name: order_items_array
+        data_type: variant
+
+      - name: dbt_updated_at
+        data_type: timestamp_ltz

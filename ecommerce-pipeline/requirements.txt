@@ -1,0 +1,5 @@
+# Add Python packages here, one per line. Pin versions where possible.
+
+
+dbt-snowflake
+apache-airflow-providers-amazon

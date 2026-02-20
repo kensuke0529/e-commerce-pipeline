@@ -23,7 +23,7 @@ This project implements an **end-to-end real-time analytics pipeline** for e-com
 | **Ingestion** | AWS Lambda, Kinesis, Firehose | Real-time event streaming |
 | **Storage** | Amazon S3, Snowflake | Data lake + cloud warehouse |
 | **Transformation** | dbt (data build tool) | SQL-based transformations |
-| **Orchestration** | Apache Airflow (Astronomer) | Workflow automation |
+| **Orchestration** | Apache Airflow | Workflow automation |
 | **BI** | Looker Studio | Analytics dashboards |
 
 ## Key Features
@@ -62,7 +62,7 @@ Event data is generated using:
 ![alt text](images/image-3.png)
 
 ### 5. Orchestration Layer
-- **Apache Airflow** (managed by Astronomer):
+- **Apache Airflow**:
     - **Orchestration**: Manages the end-to-end workflow.
     - **Dynamic Task Mapping**: Automatically discovers dbt models (`dbt ls`) and maps them to Airflow tasks, allowing for scalable, parallel execution.
     

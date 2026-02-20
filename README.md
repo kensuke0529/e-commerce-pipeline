@@ -9,10 +9,10 @@ This project implements an **end-to-end real-time analytics pipeline** for e-com
 
 **Solution Delivered**:
 - **Real-time insights** - Revenue and customer metrics updated hourly (vs. daily batch reports)
-- **Cost efficiency** - Incremental processing reduces warehouse compute costs by ~70%
+- **Cost efficiency** - Incremental processing reduces warehouse compute costs
 - **Self-service analytics** - Pre-joined tables eliminate SQL knowledge barrier for business users
 - **Data quality** - Automated testing catches data issues before they reach dashboards
-- **Scalability** - Event-driven architecture handles 10x data growth without code changes
+- **Scalability** - Event-driven architecture handles data growth without code changes
 
 **Business Outcomes**: Marketing can optimize campaigns in real-time, product teams identify top performers within hours, and executives track KPIs without waiting for analyst reports.
 

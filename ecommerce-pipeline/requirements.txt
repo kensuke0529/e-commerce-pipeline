@@ -1,5 +1,5 @@
-# Add Python packages here, one per line. Pin versions where possible.
-
-
-dbt-snowflake
-apache-airflow-providers-amazon
+fastapi
+uvicorn
+sqlalchemy
+snowflake-sqlalchemy
+python-dotenv

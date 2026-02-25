@@ -25,6 +25,7 @@ This project implements an **end-to-end real-time analytics pipeline** for e-com
 | **Transformation** | dbt (data build tool) | SQL-based transformations |
 | **Orchestration** | Apache Airflow (Astronomer) | Workflow automation |
 | **BI** | Looker Studio | Analytics dashboards |
+| **API** | FastAPI | Programmatic data access |
 
 ## Key Features
 
@@ -164,3 +165,37 @@ Below is a **Looker Studio dashboard** demonstrating downstream usage of the ana
 **[View Live Dashboard](https://lookerstudio.google.com/reporting/688ca4fe-6786-418b-8c99-99368ca02972)**
 
 ![Looker Studio Dashboard](images/image-1.png)
+
+---
+
+## FastAPI Layer
+
+A **FastAPI** service exposes the Snowflake analytics tables via a RESTful API, enabling programmatic access to orders, customers, and sales data. The API is located in `ecommerce-pipeline/api/`.
+
+
+### Running the API
+
+```bash
+cd ecommerce-pipeline/api
+source venv/bin/activate
+fastapi dev main.py  
+```
+
+Interactive docs are auto-generated at **`http://127.0.0.1:8000/docs`**.
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/orders/{order_id}` | Fetch a single order by ID |
+| `GET` | `/customers/{customer_id}` | Fetch a customer with purchase history |
+| `GET` | `/sales?order_date=YYYY-MM-DD` | Fetch daily sales summary |
+| `POST` | `/customers` | Add a new customer record |
+| `PUT` | `/customers/{customer_id}` | Update an existing customer |
+| `DELETE` | `/customers/{customer_id}` | Remove a customer record |
+
+### Usage
+
+- **Orders** – look up the value, date, and acquisition channel of any order; useful for support tooling and order tracking.
+- **Customers** – retrieve a customer's profile alongside aggregated purchase history; powers CRM integrations and personalisation workflows.
+- **Sales** – pull daily revenue summaries and top acquisition channel; feeds downstream reporting tools and scheduled alerts.

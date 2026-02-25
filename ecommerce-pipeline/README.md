@@ -1,7 +1,22 @@
-# dbt DAG Flow Explanation
+# E-commerce Data Pipeline
 
-This dbt project transforms raw e-commerce event data from S3 into analytics-ready tables in Snowflake. The pipeline is orchestrated by Apache Airflow and follows a **medallion architecture** pattern with four  layers: **Source → Staging → Intermediate → Marts → Analytics**.
+This dbt project transforms raw e-commerce event data from S3 into analytics-ready tables in Snowflake. The pipeline is orchestrated by Apache Airflow and follows a **medallion architecture** pattern with four layers: **Source → Staging → Intermediate → Marts → Analytics**.
 
+---
+
+## Data Generation Layer
+
+The pipeline uses an **AWS Lambda function** to generate realistic synthetic e-commerce event data. The Lambda is triggered on a schedule (via EventBridge) and simulates customer sessions with realistic behavior patterns:
+
+- **Event Types**: `product_view`, `cart_add`, `checkout_start`, `order_create`, `order_paid`, `order_fulfilled`, `cart_abandon`, `order_cancelled`
+- **Product Catalog**: 50 products across 5 categories (Electronics, Clothing, Home, Beauty, Sports)
+- **Customer Data**: Pre-generated customer profiles with country-specific tax rates
+- **Marketing Attribution**: Realistic channel (Google, Direct, Email, Social) and device (Mobile, Desktop, Tablet) distributions
+- **Conversion Funnel**: ~3.5% final conversion rate (industry-realistic)
+
+**Data Flow**: Lambda → Kinesis Firehose → S3 Raw Zone → Snowflake
+
+---
 
 ## Airflow Orchestration
 
